@@ -1,3 +1,4 @@
+import { checklistRuntimeReady } from "../tools/checklistToggle.js";
 /**
  * OS-version-aware feature matrix for `get-capabilities` and `doctor`.
  *
@@ -39,7 +40,8 @@ export type Requirement =
    * helper (native-helper-status) is read-only, and write support was
    * deliberately deferred by the maintainer (#181, #204). Always unmet.
    */
-  | { kind: "native_write_helper" };
+  | { kind: "native_write_helper" }
+  | { kind: "checklist_ax" };
 
 /**
  * Machine-readable reasons, in the order they are checked. `reason` is the
@@ -61,7 +63,8 @@ export type CapabilityReason =
   | `requires_macos_${number}`
   | "full_disk_access_missing"
   | "shortcuts_unavailable"
-  | "shortcut_not_installed";
+  | "shortcut_not_installed"
+  | "checklist_runtime_missing";
 
 /** One feature group. Register a new feature by adding one of these to FEATURES. */
 export interface FeatureDefinition {
@@ -94,6 +97,7 @@ export interface FeatureStatus {
 
 /** Runtime facts the matrix is evaluated against. */
 export interface CapabilityEnvironment {
+  checklistRuntime?: boolean;
   platform: NodeJS.Platform;
   /** `sw_vers -productVersion`, or null when it could not be read. */
   macOSVersion: string | null;
@@ -228,17 +232,18 @@ export const FEATURES: FeatureDefinition[] = [
       { kind: "shortcut", name: markdownShortcutName },
     ],
   },
-  // Placeholders for features that need a native WRITE helper, which this
-  // server does not ship. The opt-in private helper is read-only (write
-  // support was deliberately deferred), so enabling or installing it changes
-  // nothing here: these always report `not_implemented`. Reading smart folders
-  // is available through list-smart-folders (fullDiskAccessReads).
+  // This fork supplies checklist AX writes through the existing Hermes Python.
+  // Smart Folder writes still have no implementation.
   {
     name: "checklistToggle",
-    description: "Check or uncheck an existing checklist item in place",
-    tools: [],
+    description: "Check or uncheck one exact existing checklist item through Hermes Accessibility",
+    tools: ["set-checklist-item"],
     minimumMacOSVersion: null,
-    requirements: [{ kind: "native_write_helper" }],
+    requirements: [
+      { kind: "full_disk_access" },
+      { kind: "notes_automation" },
+      { kind: "checklist_ax" },
+    ],
   },
   {
     name: "smartFolders",
@@ -347,6 +352,13 @@ export function evaluateFeature(
           failures.add("shortcut_not_installed");
         }
         break;
+      case "checklist_ax":
+        if (!env.checklistRuntime) {
+          missing.push(label);
+          failures.add("checklist_runtime_missing");
+        }
+        unverified.push("accessibility");
+        break;
       case "native_write_helper":
         missing.push(label);
         failures.add("not_implemented");
@@ -357,6 +369,7 @@ export function evaluateFeature(
   let reason: CapabilityReason | null = null;
   if (!isMac) reason = "unsupported_platform";
   else if (failures.has("not_implemented")) reason = "not_implemented";
+  else if (failures.has("checklist_runtime_missing")) reason = "checklist_runtime_missing";
   else if (floor !== null && !versionKnown) reason = "unknown_os_version";
   else if (!osSupported) reason = `requires_macos_${Number.parseInt(floor!, 10)}`;
   else if (failures.has("full_disk_access_missing")) reason = "full_disk_access_missing";
@@ -422,6 +435,7 @@ export function probeCapabilityEnvironment(): CapabilityEnvironment {
     }
   }
   return {
+    checklistRuntime: checklistRuntimeReady(),
     platform,
     macOSVersion: readMacOSVersion(),
     darwinRelease: release(),

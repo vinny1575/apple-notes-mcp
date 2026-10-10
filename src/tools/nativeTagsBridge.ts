@@ -52,7 +52,7 @@ export function registerNativeTagsBridge(server: McpServer, manager: AppleNotesM
     if (!body) throw new Error("Note content is unavailable");
     const enriched = enrichNoteRead(id, body);
     const rich = readRichNote(id);
-    if (!enriched.complete || enriched.revision !== rich.revision)
+    if (enriched.revision !== rich.revision)
       throw new Error("Native metadata changed during read; read the note again");
     return {
       contentHash: richContentHash(body, enriched),

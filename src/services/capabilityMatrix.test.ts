@@ -110,8 +110,22 @@ describe("evaluateFeature", () => {
     expect(s.requirements).toEqual(["notes_automation"]);
   });
 
+  it("reports configured checklist writes while leaving Accessibility unverified", () => {
+    expect(
+      evaluateFeature(feature("checklistToggle"), env({ checklistRuntime: true }))
+    ).toMatchObject({
+      available: true,
+      reason: null,
+      tools: ["set-checklist-item"],
+      unverified: ["notes_automation", "accessibility"],
+    });
+    expect(evaluateFeature(feature("checklistToggle"), env())).toMatchObject({
+      available: false,
+      reason: "checklist_runtime_missing",
+    });
+  });
   it("reports placeholders as not_implemented", () => {
-    for (const name of ["checklistToggle", "smartFolders"])
+    for (const name of ["smartFolders"])
       expect(evaluateFeature(feature(name), env())).toMatchObject({
         available: false,
         osSupported: true,

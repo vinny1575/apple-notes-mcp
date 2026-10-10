@@ -145,6 +145,7 @@ const STRICT_NOTE_ID: Array<[string, string]> = [
   ["move-note", "id"],
   ["append-native", "id"],
   ["create-checklist-item", "id"],
+  ["set-checklist-item", "id"],
   ["create-checklist-items", "id"],
   ["create-table", "id"],
   ["set-note-pinned", "id"],

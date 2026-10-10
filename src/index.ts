@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { registerChecklistToggle } from "./tools/checklistToggle.js";
 /**
  * Apple Notes MCP Server
  *
@@ -322,6 +323,7 @@ registerMarkdownTemplates(server);
 registerSvgAnalysis(server);
 registerNativeTagsBridge(server, notesManager);
 registerNativeOperations(server, notesManager);
+registerChecklistToggle(server, notesManager);
 registerPrivateHelperTools(server, notesManager);
 
 // =============================================================================

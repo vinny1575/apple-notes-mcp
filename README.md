@@ -2083,6 +2083,15 @@ for options and exactly what it exposes.
 
 ---
 
+
+#### `set-checklist-item`
+
+Checks or unchecks one existing native checklist paragraph without rewriting the note. Supply exact `id`, fresh `expectedContentHash` from `get-note-content`, zero-based checklist `index`, exact unique `text`, and desired `checked` boolean. Optional `dryRun: true` locates and selects only; no toggle. Duplicate text, changed revision, locked notes, lost focus and uncertain outcomes refuse. After the shortcut, native item identity, sibling states, text, links, tags, native objects and formatting are verified. Read again before retrying an uncertain write.
+
+Build on macOS: `swiftc -emit-library native/checklist/toggle.swift -o native/checklist/libnotes-checklist.dylib`. Set `APPLE_NOTES_MCP_AX_PYTHON` to the existing Hermes Python executable with Accessibility and Full Disk Access. The library loads inside that Python process; no separately permissioned helper executable. Notes must run in the logged-in GUI session. One tick at a time; worker deadline 5 seconds and bounded readback. The operation uses AppleScript `show` with the exact Core Data ID, then foregrounds Notes briefly and restores the previous app and selection. It sends only Notes' Mark Checked shortcut, never body text, select-all, clipboard writes or menu-opening AX actions. Native sorting that changes note order fails collateral verification.
+
+Fork retains every upstream tool. Native-tag bridge consistency guard uses revision equality rather than the full-body `complete` flag; all tag preservation and revision checks remain.
+
 #### `get-checklist-state`
 
 Reads checklist done/undone state for a note. This bypasses the AppleScript limitation where `body of note` strips checklist state, by reading directly from the NoteStore SQLite database.
@@ -3191,7 +3200,7 @@ paragraph or note.
 | Limited rich formatting | Use `format: "html"` on create/update for headings, lists, bold, code blocks; some complex formatting may not render |
 | Exact IDs for writes | Writes take an exact note ID and a fresh `contentHash`, because Notes titles are not unique. Read tools that accept a `title` need an exact, case-sensitive match |
 | Checklist state | Requires [Full Disk Access](https://github.com/sweetrb/apple-notes-mcp/blob/main/docs/FULL-DISK-ACCESS.md) to read done/undone state from the database |
-| Checklist **creation** | Not possible through AppleScript: its `body of note` setter strips `<input type="checkbox">` and ignores any checklist-styling CSS class, because Notes stores checklist items as a protobuf paragraph style (`style_type=103`). The server creates real checklist items through Shortcuts instead; see [Creating Checklists](#creating-checklists). Checking or unchecking an existing item is not supported. |
+| Checklist **creation** | Not possible through AppleScript: its `body of note` setter strips `<input type="checkbox">` and ignores any checklist-styling CSS class, because Notes stores checklist items as a protobuf paragraph style (`style_type=103`). The server creates real checklist items through Shortcuts instead; see [Creating Checklists](#creating-checklists). This fork supports checking or unchecking an existing item through `set-checklist-item` with Hermes-owned Accessibility. |
 
 ### Creating Checklists
 
@@ -3370,3 +3379,5 @@ Part of a family of macOS MCP servers:
 If macOS keeps re-prompting for Full Disk Access or Automation for `node` after a Node update, check its path and code signature with `doctor`. An **ad-hoc-signed Node** has no stable certificate identity, and version managers may also move the executable when they update it.
 
 You can opt in to the [permission broker](#permission-broker-opt-in) to put the grants on a signed app at a fixed path; review its same-user trust trade-off first. After a package or runtime update, run `setup --broker` again. Alternatively, keep the server in-process and use an official **Developer-ID-signed Node at a stable path**. Neither approach guarantees that grants survive a change in signing identity or macOS policy. The walkthrough and signing caveats are in [docs/NODE-RUNTIME-AND-TCC-PERMISSIONS.md](docs/NODE-RUNTIME-AND-TCC-PERMISSIONS.md).
+
+The fork declines only Notes’ exact automatic checklist sorting prompt with **Not Now**, preserving existing order. Other modal dialogs refuse. If a server is forcibly killed, its operation lock directory may remain: remove `~/.hermes/apple-notes-checklist-operation.lock` only after confirming no checklist worker/server operation is running.

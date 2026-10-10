@@ -38,7 +38,6 @@ const LIVE_VALIDATION_BLOCKERS: Record<string, string> = {};
 const signingRefusal =
   "Installed Shortcuts refuses to sign this Notes action (unsupported features); no background fallback is enabled";
 export const UNAVAILABLE = {
-  "set-checklist-item": signingRefusal,
   "delete-checklist-item": signingRefusal,
   "set-attachment-size": signingRefusal,
   "insert-mention": signingRefusal,

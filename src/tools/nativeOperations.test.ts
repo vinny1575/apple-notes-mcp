@@ -71,7 +71,7 @@ describe("background capability boundaries", () => {
     expect(r.structuredContent.bridge.installed).toBe(false);
     expect(r.structuredContent.operations["append-native"].available).toBe(false);
     expect(r.structuredContent.operations["append-native"].verified).toBe(true);
-    expect(r.structuredContent.unavailable["set-checklist-item"]).toMatch(/unsupported features/);
+    expect(r.structuredContent.unavailable["set-checklist-item"]).toBeUndefined();
   });
   it("reports live-verified Markdown block import on the Create Markdown Note bridge", async () => {
     const missing = await fixture()("get-capabilities")[2]({});
